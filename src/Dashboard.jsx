@@ -58,16 +58,19 @@ export default function Dashboard({ token, role, onLogout }) {
   useEffect(() => {
     if (currentTab !== 'server_detail' || !activeServer) return
 
+    let isMounted = true
     const fetchStatus = async () => {
+      if (!isMounted) return
       try {
         const res = await fetch(`${API_BASE}/servers/status?id=${activeServer.id}`, { headers })
         const data = await res.json()
-        if (res.ok) {
+        if (res.ok && isMounted) {
           setStatus(data)
           // If the server was installing (known by backend) or state is Installing, refresh list
           if (activeServer.status === 'installing' || activeServer.installing || data.actual_state === 'INSTALLING') {
             fetch(`${API_BASE}/servers`, { headers })
               .then(r => r.json()).then(d => {
+                if (!isMounted) return
                 const refreshed = (d || [])
                 setServers(refreshed)
                 const updated = refreshed.find(s => s.id === activeServer.id)
@@ -81,15 +84,45 @@ export default function Dashboard({ token, role, onLogout }) {
     fetchStatus()
     const interval = setInterval(fetchStatus, 2000)
 
+    // WebSocket logic with simplified reconnection via dependency bounce
     if (!activeServer.node_ip || !activeServer.daemon_port) return
 
-    const wsUrl = `ws://${activeServer.node_ip}:${activeServer.daemon_port}/api/servers/console?id=${activeServer.id}&token=${activeServer.ws_token}`
-    const ws = new WebSocket(wsUrl)
-    ws.onmessage = e  => setLogs(prev => prev + e.data)
-    ws.onopen    = () => setLogs('')
-    ws.onerror   = () => setLogs(prev => prev + '\n[UI] Failed to connect to real-time console.\n')
+    let ws = null
+    let reconnectTimeout = null
 
-    return () => { clearInterval(interval); ws.close() }
+    const connectWs = () => {
+      const wsUrl = `ws://${activeServer.node_ip}:${activeServer.daemon_port}/api/servers/console?id=${activeServer.id}&token=${activeServer.ws_token || token}`
+      ws = new WebSocket(wsUrl)
+      
+      ws.onopen = () => {
+        if (!isMounted) return
+        setLogs('')
+        console.log(`[UI] Console connected to ${activeServer.id}`)
+      }
+      
+      ws.onmessage = e => {
+        if (isMounted) setLogs(prev => prev + e.data)
+      }
+
+      ws.onclose = () => {
+        if (!isMounted) return
+        console.log(`[UI] Console disconnected. Retrying in 5s...`)
+        reconnectTimeout = setTimeout(connectWs, 5000)
+      }
+
+      ws.onerror = () => {
+        if (isMounted) setLogs(prev => prev + '\n[UI] Connection error. Please check if Daemon port 8550 is open in firewall.\n')
+      }
+    }
+
+    connectWs()
+
+    return () => { 
+      isMounted = false
+      clearInterval(interval)
+      if (reconnectTimeout) clearTimeout(reconnectTimeout)
+      if (ws) ws.close() 
+    }
   }, [activeServer?.id, currentTab])
 
   // ── Actions ───────────────────────────────────────────────
@@ -103,8 +136,16 @@ export default function Dashboard({ token, role, onLogout }) {
   const proxyAction = async endpoint => {
     setLoading(true)
     try {
-      await fetch(`${API_BASE}/servers/${endpoint}?id=${activeServer.id}`, { method: 'POST', headers })
-    } catch {} finally { setLoading(false) }
+      const res = await fetch(`${API_BASE}/servers/${endpoint}?id=${activeServer.id}`, { method: 'POST', headers })
+      if (!res.ok) {
+        const d = await res.json()
+        alert(`Action failed: ${d.message || res.statusText}`)
+      }
+    } catch (e) {
+      alert(`Error reaching backend: ${e.message}`)
+    } finally { 
+      setLoading(false) 
+    }
   }
 
   const deleteServer = async () => {
