@@ -9,6 +9,7 @@ import NodesPage   from './pages/NodesPage'
 import ServerDetail from './pages/ServerDetail'
 import NodeForm    from './pages/NodeForm'
 import ServerForm  from './pages/ServerForm'
+import HytaleConfig from './pages/HytaleConfig'
 
 const API_BASE = '/api'
 
@@ -253,6 +254,13 @@ export default function Dashboard({ token, role, onLogout }) {
               onAction={proxyAction}
               onDelete={deleteServer}
               onBack={() => setCurrentTab('servers')}
+            />
+          )}
+
+          {currentTab === 'config' && (
+            <HytaleConfig 
+              nodes={nodes} 
+              token={token} 
             />
           )}
         </main>
