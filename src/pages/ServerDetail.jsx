@@ -1,10 +1,20 @@
-import { Play, Square, RotateCcw, Trash2, ArrowLeft, ExternalLink } from 'lucide-react'
+import { useState } from 'react'
+import { Play, Square, RotateCcw, Trash2, ArrowLeft, ExternalLink, Terminal } from 'lucide-react'
 import Badge       from '../components/ui/Badge'
 import ProgressBar from '../components/ui/ProgressBar'
 
-export default function ServerDetail({ server, status, logs, loading, onAction, onDelete, onBack }) {
+export default function ServerDetail({ server, status, logs, loading, onAction, onDelete, onBack, onCommand }) {
+  const [command, setCommand] = useState('')
   const actualState  = status?.actual_state?.toLowerCase() || 'stopped'
   const isInstalling = server.status === 'installing' || status?.actual_state === 'INSTALLING'
+  const isRunning    = actualState === 'running'
+
+  const handleSendCommand = async e => {
+    e.preventDefault()
+    if (!command.trim()) return
+    if (onCommand) await onCommand(command.trim())
+    setCommand('')
+  }
 
   return (
     <div className="dashboard-container">
@@ -27,13 +37,13 @@ export default function ServerDetail({ server, status, logs, loading, onAction, 
         <div className="card" style={{ border: server.auth_url ? '1px solid var(--blue)' : 'none' }}>
           <div className="card-body">
             <div className="text-sm font-semibold" style={{ color: 'var(--blue)', marginBottom: 8 }}>
-              {server.auth_url ? '⚠️ Authentication Required' : `Installing server files… ${server.install_progress}%`}
+              {server.auth_url ? '⚠️ Server Auth Required' : `Installing server files… ${server.install_progress}%`}
             </div>
             {server.auth_url ? (
               <div style={{ marginTop: 12 }}>
                 <p className="text-sm" style={{ opacity: 0.8, marginBottom: 12 }}>
-                  Your Hytale server needs to be authenticated with your Hytale account. 
-                  Please go to the URL below and enter the provided code.
+                  Your Hytale server needs identity authentication. Start the server, then use the 
+                  command box below to send <code style={{ background: 'rgba(255,255,255,0.1)', padding: '2px 6px', borderRadius: 4 }}>/auth login device</code>.
                 </p>
                 <div className="flex items-center gap-4 flex-wrap">
                   <a 
@@ -45,9 +55,11 @@ export default function ServerDetail({ server, status, logs, loading, onAction, 
                   >
                     <ExternalLink size={16} /> Open Hytale Auth
                   </a>
-                  <div style={{ background: 'rgba(0,0,0,0.2)', padding: '8px 16px', borderRadius: 6, border: '1px dashed var(--blue)' }}>
-                    <span style={{ fontSize: '1.2rem', fontWeight: 'bold', letterSpacing: 2 }}>{server.auth_code}</span>
-                  </div>
+                  {server.auth_code && (
+                    <div style={{ background: 'rgba(0,0,0,0.2)', padding: '8px 16px', borderRadius: 6, border: '1px dashed var(--blue)' }}>
+                      <span style={{ fontSize: '1.2rem', fontWeight: 'bold', letterSpacing: 2 }}>{server.auth_code}</span>
+                    </div>
+                  )}
                 </div>
               </div>
             ) : (
@@ -101,6 +113,30 @@ export default function ServerDetail({ server, status, logs, loading, onAction, 
             : 'Waiting for output stream…'
           )}
         </pre>
+
+        {/* Send Command */}
+        <form onSubmit={handleSendCommand} style={{ display: 'flex', gap: 8, padding: '10px 12px', borderTop: '1px solid rgba(255,255,255,0.06)', background: 'rgba(0,0,0,0.2)' }}>
+          <span style={{ display: 'flex', alignItems: 'center', opacity: 0.4, paddingLeft: 4 }}>
+            <Terminal size={14} />
+          </span>
+          <input
+            type="text"
+            className="input"
+            placeholder={isRunning ? 'Send command… (e.g. /auth login device)' : 'Start the server to send commands'}
+            value={command}
+            onChange={e => setCommand(e.target.value)}
+            disabled={!isRunning || loading}
+            style={{ flex: 1, padding: '6px 10px', fontFamily: 'monospace', fontSize: '0.85rem' }}
+          />
+          <button
+            type="submit"
+            className="btn-primary"
+            disabled={!isRunning || !command.trim() || loading}
+            style={{ padding: '6px 14px', whiteSpace: 'nowrap' }}
+          >
+            Send
+          </button>
+        </form>
       </div>
     </div>
   )

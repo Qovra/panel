@@ -10,6 +10,7 @@ import ServerDetail from './pages/ServerDetail'
 import NodeForm    from './pages/NodeForm'
 import ServerForm  from './pages/ServerForm'
 import HytaleConfig from './pages/HytaleConfig'
+import SystemLogs  from './pages/SystemLogs'
 
 const API_BASE = '/api'
 
@@ -149,6 +150,22 @@ export default function Dashboard({ token, role, onLogout }) {
     }
   }
 
+  const sendServerCommand = async (cmd) => {
+    try {
+      const res = await fetch(`${API_BASE}/servers/command?id=${activeServer.id}`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ command: cmd }),
+      })
+      if (!res.ok) {
+        const d = await res.json()
+        alert(`Command failed: ${d.message || res.statusText}`)
+      }
+    } catch (e) {
+      alert(`Error: ${e.message}`)
+    }
+  }
+
   const deleteServer = async () => {
     if (!window.confirm('Are you sure you want to PERMANENTLY delete this server and all its files?')) return
     setLoading(true)
@@ -254,6 +271,7 @@ export default function Dashboard({ token, role, onLogout }) {
               onAction={proxyAction}
               onDelete={deleteServer}
               onBack={() => setCurrentTab('servers')}
+              onCommand={sendServerCommand}
             />
           )}
 
@@ -262,6 +280,10 @@ export default function Dashboard({ token, role, onLogout }) {
               nodes={nodes} 
               token={token} 
             />
+          )}
+
+          {currentTab === 'system_logs' && (
+            <SystemLogs token={token} />
           )}
         </main>
       </div>

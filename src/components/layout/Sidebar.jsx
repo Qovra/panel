@@ -1,10 +1,11 @@
-import { Home, Server, HardDrive, LogOut, LayoutDashboard, Settings } from 'lucide-react'
+import { Home, Server, HardDrive, LogOut, LayoutDashboard, Settings, Monitor } from 'lucide-react'
 
 const NAV_ITEMS = [
-  { id: 'home',    label: 'Home',    icon: LayoutDashboard },
-  { id: 'servers', label: 'Servers', icon: Server },
-  { id: 'nodes',   label: 'Nodes',   icon: HardDrive },
-  { id: 'config',  label: 'Hytale Config', icon: Settings },
+  { id: 'home',        label: 'Home',         icon: LayoutDashboard },
+  { id: 'servers',     label: 'Servers',      icon: Server },
+  { id: 'nodes',       label: 'Nodes',        icon: HardDrive },
+  { id: 'config',      label: 'Hytale Config', icon: Settings },
+  { id: 'system_logs', label: 'System Logs',  icon: Monitor },
 ]
 
 export default function Sidebar({ currentTab, onNavigate, onLogout }) {
