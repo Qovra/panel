@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Play, Square, RotateCcw, LogOut, ArrowLeft, Plus, Server, HardDrive, Trash2, Home, Activity, Users, Zap } from 'lucide-react'
 
-const API_BASE = 'http://127.0.0.1:3000/api'
+const API_BASE = '/api'
 
 export default function Dashboard({ token, role, onLogout }) {
   const [currentTab, setCurrentTab] = useState('home') // 'home', 'servers', 'nodes', 'node_add', 'server_add', 'server_detail'

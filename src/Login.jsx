@@ -1,6 +1,9 @@
 import { useState } from 'react'
 
-const API_BASE = 'http://127.0.0.1:3000/api'
+// Use a relative path so the panel works regardless of the server IP/hostname.
+// Since the backend serves both the API and this SPA on the same port,
+// '/api' always resolves to the correct host.
+const API_BASE = '/api'
 
 export default function Login({ onLogin }) {
   const [email, setEmail] = useState('')
