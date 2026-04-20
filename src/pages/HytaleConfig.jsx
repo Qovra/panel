@@ -24,7 +24,8 @@ export default function HytaleConfig({ nodes, token }) {
     // Close any existing connection
     if (wsRef.current) wsRef.current.close()
 
-    const wsUrl = `ws://${node.ip}:${node.daemon_port}/api/node/cli-auth?token=${token}`
+    const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+    const wsUrl = `${wsProtocol}//${window.location.host}/api/node/cli-auth?id=${node.id}&token=${token}`
     const ws = new WebSocket(wsUrl)
     wsRef.current = ws
 

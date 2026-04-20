@@ -93,7 +93,8 @@ export default function Dashboard({ token, role, onLogout }) {
     let reconnectTimeout = null
 
     const connectWs = () => {
-      const wsUrl = `ws://${activeServer.node_ip}:${activeServer.daemon_port}/api/servers/console?id=${activeServer.id}&token=${activeServer.ws_token || token}`
+      const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+      const wsUrl = `${wsProtocol}//${window.location.host}/api/servers/console?id=${activeServer.id}&token=${token}`
       ws = new WebSocket(wsUrl)
       
       ws.onopen = () => {
