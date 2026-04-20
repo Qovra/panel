@@ -1,4 +1,4 @@
-import { Play, Square, RotateCcw, Trash2, ArrowLeft } from 'lucide-react'
+import { Play, Square, RotateCcw, Trash2, ArrowLeft, ExternalLink } from 'lucide-react'
 import Badge       from '../components/ui/Badge'
 import ProgressBar from '../components/ui/ProgressBar'
 
@@ -23,13 +23,36 @@ export default function ServerDetail({ server, status, logs, loading, onAction, 
       </div>
 
       {/* Install progress */}
-      {isInstalling && (
-        <div className="card">
+      {(isInstalling || (server.auth_url && server.status === 'installing')) && (
+        <div className="card" style={{ border: server.auth_url ? '1px solid var(--blue)' : 'none' }}>
           <div className="card-body">
             <div className="text-sm font-semibold" style={{ color: 'var(--blue)', marginBottom: 8 }}>
-              Installing server files… {server.install_progress}%
+              {server.auth_url ? '⚠️ Authentication Required' : `Installing server files… ${server.install_progress}%`}
             </div>
-            <ProgressBar value={server.install_progress} color="blue" height={8} />
+            {server.auth_url ? (
+              <div style={{ marginTop: 12 }}>
+                <p className="text-sm" style={{ opacity: 0.8, marginBottom: 12 }}>
+                  Your Hytale server needs to be authenticated with your Hytale account. 
+                  Please go to the URL below and enter the provided code.
+                </p>
+                <div className="flex items-center gap-4 flex-wrap">
+                  <a 
+                    href={server.auth_url} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="btn btn-primary"
+                    style={{ background: 'var(--blue)', padding: '8px 16px', borderRadius: 6, display: 'inline-flex', alignItems: 'center', gap: 8 }}
+                  >
+                    <ExternalLink size={16} /> Open Hytale Auth
+                  </a>
+                  <div style={{ background: 'rgba(0,0,0,0.2)', padding: '8px 16px', borderRadius: 6, border: '1px dashed var(--blue)' }}>
+                    <span style={{ fontSize: '1.2rem', fontWeight: 'bold', letterSpacing: 2 }}>{server.auth_code}</span>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <ProgressBar value={server.install_progress} color="blue" height={8} />
+            )}
           </div>
         </div>
       )}

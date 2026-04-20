@@ -38,7 +38,7 @@ export default function ServersPage({ servers, role, onOpenServer, onNavigate })
               {s.installing && (
                 <div style={{ marginBottom: 10 }}>
                   <div className="text-xs" style={{ color: 'var(--blue)', marginBottom: 4 }}>
-                    Installing: {s.install_progress}%
+                    {s.auth_url ? '⚠️ Waiting for Auth' : `Installing: ${s.install_progress}%`}
                   </div>
                   <ProgressBar value={s.install_progress} color="blue" />
                 </div>
