@@ -33,11 +33,18 @@ export default function Dashboard({ token, role, onLogout }) {
 
   // ── Fetch on tab change ───────────────────────────────────
   useEffect(() => {
-    if (['servers', 'server_add', 'home'].includes(currentTab)) {
+    if (['servers', 'server_detail', 'home'].includes(currentTab)) {
       fetch(`${API_BASE}/servers`, { headers })
-        .then(r => r.json()).then(d => setServers(d || [])).catch(console.error)
+        .then(r => r.json()).then(d => {
+          setServers(d || [])
+          // Sync active server if currently in detail view
+          if (currentTab === 'server_detail' && activeServer) {
+            const updated = (d || []).find(s => s.id === activeServer.id)
+            if (updated) setActiveServer(updated)
+          }
+        }).catch(console.error)
     }
-    if (['nodes', 'server_add', 'home'].includes(currentTab)) {
+    if (['nodes', 'home'].includes(currentTab)) {
       fetch(`${API_BASE}/nodes`, { headers })
         .then(r => r.json()).then(d => setNodes(d || [])).catch(console.error)
     }
@@ -54,12 +61,18 @@ export default function Dashboard({ token, role, onLogout }) {
     const fetchStatus = async () => {
       try {
         const res = await fetch(`${API_BASE}/servers/status?id=${activeServer.id}`, { headers })
+        const data = await res.json()
         if (res.ok) {
-          const data = await res.json()
           setStatus(data)
-          if (data.status === 'installing') {
+          // If the server was installing (known by backend) or state is Installing, refresh list
+          if (activeServer.status === 'installing' || activeServer.installing || data.actual_state === 'INSTALLING') {
             fetch(`${API_BASE}/servers`, { headers })
-              .then(r => r.json()).then(d => setServers(d || []))
+              .then(r => r.json()).then(d => {
+                const refreshed = (d || [])
+                setServers(refreshed)
+                const updated = refreshed.find(s => s.id === activeServer.id)
+                if (updated) setActiveServer(updated)
+              })
           }
         }
       } catch {}
